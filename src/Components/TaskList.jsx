@@ -6,20 +6,19 @@ import { message } from "antd";
 
 
 
-//const TaskList = ()=> {
-  //  const[task, setTask] = useState([]);
-    //const[loading, setLoading] = useState(true);
-    //const [canWrite, setCanWrite]= useState(false);
-    //const [canDelate, setCanDelete] = useState(false);
-    //const{user}= useAuth();
-//}
-
-useEffect(()=>{
-    fetchTasks();
-    if(user) {
+const TaskList = () => {
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [canWrite, setCanWrite] = useState(false);
+    const [canDelete, setCanDelete] = useState(false);
+    const { user } = useAuth();
+  
+    useEffect(() => {
+      fetchTasks();
+      if (user) {
         checkPermissions();
-    }
-}, [user]);
+      }
+    }, [user]);
 
 const checkPermissions = async () => {
     if(user){
@@ -34,7 +33,7 @@ const fetchTasks = async () => {
     setLoading(true);
     try {
         const tasksData = await getAllTasks();
-        setTask(tasksData);
+        setTasks(tasksData);
     } catch (error){
         console.error("error al obtener tareas",error),
         console.error("no se pudieron cargar las tareas");
@@ -47,7 +46,7 @@ const handleDeleteTask = async (taskId) => {
     try{
         await deleteTask(taskId);
         message.success("Tarea eliminada con exito");
-        setTask(tasks.filter(task => task.id !== taskId));
+        setTasks(tasks.filter(task => task.id !== taskId));
     } catch (error){
         console.error("error al eliminar tarea",error);
         console.error("No se pudo eliminar la tarea");
@@ -55,7 +54,7 @@ const handleDeleteTask = async (taskId) => {
 };
 
 const handleTaskAdded = (newTask) => {
-    setTask ([newTask, ...tasks]);
+    setTasks ([newTask, ...tasks]);
     message.success("Tarea creada con éxito");
 };
 
@@ -72,7 +71,5 @@ const formatDate = (date) => {
     });
   };
 
-  return {
-
-
-  }
+  
+}
