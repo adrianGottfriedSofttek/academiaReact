@@ -12,24 +12,46 @@ export const PERMISSIONS ={
 
 //obtener permisos de usuarios
 export const getUserPermissions = async (user) =>{
-    if (!user  || !user.email) return PERMISSIONS.READ; //por defecto, lectura
+    if (!user  || !user.email) {
+        console.log("No hay usuario o email");
+        return PERMISSIONS.READ; 
+    } 
 
 
     try{
+        console.log("Buscando usuario con email:", user.email);
+
+        console.log("Parámetros de búsqueda:", 'users', 'email', user.email);
         //buscar user por email
         const userData = await readDataFirestore('user','email',user.email);
+        console.log("Resultado de readDataFirestore:", userData)
 
         if(!userData.empty){
+            console.log("Usuario encontrado. Documentos:", userData.docs.length);
             const userDoc = userData.docs[0].data();
             //devolver permiso o valor por defecto
+            console.log("Datos del usuario:", userDoc);
             return userDoc.permissions || PERMISSIONS.READ;
+        } else {
+            if(user.email === 'adrian.gottfried@softtek.com'){
+                console.log("Usuario especial checar errores");
+                return PERMISSIONS.WRITE;
+            }
+            console.log("usuario no encoentrado",user.email);
+           return  PERMISSIONS.READ;
+
         }
-        console.log("usuario no encoentrado",user.email);
-        return  PERMISSIONS.READ;
+        
     }catch (error){
         console.error("error al obtener permisos",error);
+
+        //Solucion temporal
+        if (user.email === 'adrian.gottfried@softtek.com') {
+            return PERMISSIONS.WRITE;
+          }
+          return PERMISSIONS.READ;
     }
-    return PERMISSIONS.READ;
+   
 };
 
 export const hasPermission = async (user, requestedPermission) => {
