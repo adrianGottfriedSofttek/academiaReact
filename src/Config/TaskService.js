@@ -1,27 +1,27 @@
 import firebaseAcademia from "./firebaseConfig";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, getFirestore,serverTimestamp} from "firebase/firestore";
+import {  collection, addDoc, getDocs,  deleteDoc,  doc,  query,  orderBy,  getFirestore, serverTimestamp} from "firebase/firestore";
 import { readDataFirestore } from './firestoreCalls';
 import { PERMISSIONS } from './userPermissions';
 
 const db = getFirestore(firebaseAcademia);
 
-//  almacenar las tareas
+// almacenar las tareas
 const TASKS_COLLECTION = 'tasks';
 
 // nueva tarea
 export const createTask = async (taskData, user) => {
   try {
-    // buscar información
+    // información del usuario
     const userData = await readDataFirestore('users', 'email', user.email);
     let creatorName = user.email.split('@')[0]; // Valor por defecto
     
-    // get nombre  del usuaroi
+    // get  nombre real del usuario 
     if (!userData.empty) {
       const userDoc = userData.docs[0].data();
       creatorName = userDoc.name || creatorName;
     }
     
-    // estructura de la tarea 
+    // estructura de la tarea
     const newTask = {
       title: taskData.title,
       content: taskData.content,
@@ -30,7 +30,7 @@ export const createTask = async (taskData, user) => {
       createdAt: serverTimestamp(),
     };
     
-    // agregar la tarea 
+    // sgregar tarea
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), newTask);
     
     return {
@@ -44,7 +44,7 @@ export const createTask = async (taskData, user) => {
   }
 };
 
-// get las tareas ordenadas por fecha
+// obtener las tareas ordenadas por fecha de creación 
 export const getAllTasks = async () => {
   try {
     const tasksRef = collection(db, TASKS_COLLECTION);
@@ -55,7 +55,7 @@ export const getAllTasks = async () => {
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       
-      // timestamp a Date si existe
+      //  timestamp de Firestore a Date
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
       
       tasks.push({
@@ -72,7 +72,7 @@ export const getAllTasks = async () => {
   }
 };
 
-// Eliminar una tarea
+// delete una tarea 
 export const deleteTask = async (taskId) => {
   try {
     await deleteDoc(doc(db, TASKS_COLLECTION, taskId));
