@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from "../hooks/userAuth";
 import { hasDeletePermission, hasWritePermission } from "../Config/userPermissions";
 import { deleteTask, getAllTasks } from "../Config/taskService";
-import { message } from "antd";
-
+import { List, Card, Spin, Empty, Button, message, Row, Col } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
+import TaskForm from './TaskForm';
 
 
 const TaskList = () => {
@@ -71,5 +72,61 @@ const formatDate = (date) => {
     });
   };
 
-  
-}
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Lista de Tareas</h2>
+      
+      
+      {canWrite && (
+        <TaskForm onTaskAdded={handleTaskAdded} user={user} />
+      )}
+      
+      {loading ? (
+        <div style={{ textAlign: 'center', margin: '40px 0' }}>
+          <Spin size="large" />
+        </div>
+      ) : tasks.length > 0 ? (
+        <List
+          grid={{
+            gutter: 16,
+            xs: 1,
+            sm: 2,
+            md: 3,
+            lg: 3,
+            xl: 4,
+            xxl: 4,
+          }}
+          dataSource={tasks}
+          renderItem={(task) => (
+            <List.Item>
+              <Card
+                title={task.title}
+                extra={
+                  canDelete && (
+                    <Button 
+                      type="text" 
+                      danger 
+                      icon={<DeleteOutlined />} 
+                      onClick={() => handleDeleteTask(task.id)}
+                    />
+                  )
+                }
+                hoverable
+              >
+                <p>{task.content}</p>
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#888' }}>
+                  <p>Creador: {task.creatorName}</p>
+                  <p>Fecha: {formatDate(task.createdAt)}</p>
+                </div>
+              </Card>
+            </List.Item>
+          )}
+        />
+      ) : (
+        <Empty description="No hay tareas disponibles" />
+      )}
+    </div>
+  );
+};
+
