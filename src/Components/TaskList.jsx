@@ -130,3 +130,4 @@ const formatDate = (date) => {
   );
 };
 
+export default TaskList;
