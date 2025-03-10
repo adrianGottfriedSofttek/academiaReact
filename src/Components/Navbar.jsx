@@ -1,16 +1,263 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout,Row, Col, Typography, Button, Avatar, Input, Card, Empty, Spin, Pagination, Popconfirm,message } from 'antd';
-import { LogoutOutlined, UserOutlined, UnorderedListOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined, UnorderedListOutlined, DeleteOutlined, EditOutlined, PlusOutlined  } from '@ant-design/icons';
 import { getFirestore, collection, addDoc, updateDoc, doc, deleteDoc,query,orderBy,getDocs } from 'firebase/firestore';
 import { useAuth } from '../hooks/userAuth';
 import { readData } from '../Config/realtimeCalls';
 import { readDataFirestore } from '../Config/firestoreCalls';
 import { formatearFecha, convertirAFecha } from '../utils/dateFormatter';
+import styled, { createGlobalStyle, keyframes } from 'styled-components';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { TextArea } = Input;
+
+const GlobalStyle = createGlobalStyle`
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-attachment: fixed;
+    background-size: cover;
+  }
+`;
+
+// Animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const formAppear = keyframes`
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
+
+// Styled Components
+const StyledHeader = styled(Header)`
+  position: fixed;
+  z-index: 1;
+  width: 100%;
+  background: linear-gradient(to right, #667eea, #764ba2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  padding: 0 20px;
+`;
+
+const NavTitle = styled(Title)`
+  margin: 0;
+  color: white;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+`;
+
+const UserInfo = styled.div`
+  color: white;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+`;
+
+const StyledAvatar = styled(Avatar)`
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  margin: 0 10px;
+`;
+
+const LogoutBtn = styled(Button)`
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
+const ContentWrapper = styled(Content)`
+  padding: 0 50px;
+  margin-top: 64px;
+`;
+
+const MainCard = styled.div`
+  padding: 24px;
+  min-height: 380px;
+  background: #fff;
+  border-radius: 15px;
+  margin-top: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  animation: ${formAppear} 0.6s ease-out;
+`;
+
+const TaskFormCard = styled(Card)`
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  border: none;
+  animation: ${formAppear} 0.6s ease-out;
+  
+  .ant-card-head {
+    background: linear-gradient(to right, #667eea, #764ba2);
+    color: white;
+    border-bottom: none;
+  }
+  
+  .ant-card-head-title {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+`;
+
+const InputLabel = styled.label`
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  animation: ${fadeIn} 0.5s ease-out;
+  animation-fill-mode: both;
+  animation-delay: ${props => props.delay || '0s'};
+`;
+
+const StyledInput = styled(Input)`
+  border-radius: 8px;
+  height: 40px;
+  transition: all 0.3s;
+  border: 2px solid #e0e0e0;
+  
+  &:hover, &:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  }
+`;
+
+const StyledTextArea = styled(TextArea)`
+  border-radius: 8px;
+  transition: all 0.3s;
+  border: 2px solid #e0e0e0;
+  
+  &:hover, &:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  }
+`;
+
+const ActionButton = styled(Button)`
+  border-radius: 8px;
+  height: 40px;
+  font-weight: 500;
+  
+  &.primary {
+    background: linear-gradient(to right, #667eea, #764ba2);
+    border: none;
+    box-shadow: 0 4px 10px rgba(24, 144, 255, 0.3);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(24, 144, 255, 0.4);
+      background: linear-gradient(to right, #5a72e2, #6a42a0);
+    }
+    
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+`;
+
+const TaskListContainer = styled.div`
+  background: #f7f9fc;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+  animation: ${fadeIn} 0.5s ease-out;
+`;
+
+const TaskListTitle = styled.h2`
+  margin-bottom: 20px;
+  text-align: center;
+  color: #333;
+  font-weight: 700;
+  position: relative;
+  padding-bottom: 12px;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(to right, #667eea, #764ba2);
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2px;
+  }
+`;
+
+const TaskCard = styled(Card)`
+  height: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .ant-card-meta-title {
+    color: #333;
+    font-weight: 600;
+  }
+  
+  .ant-card-meta-description {
+    color: #666;
+  }
+  
+  .ant-card-actions {
+    background: #f7f9fc;
+    border-top: 1px solid #eee;
+  }
+`;
+
+const TaskMeta = styled.div`
+  font-size: 12px;
+  color: #888;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #eee;
+`;
 
 export default function Navbar() {
   const { logout, user } = useAuth();
@@ -59,7 +306,8 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    
+    window.location.href = '/login';
   };
 
   const fetchTasks = async () => {
@@ -208,198 +456,176 @@ export default function Navbar() {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ 
-        position: 'fixed', 
-        zIndex: 1, 
-        width: '100%',
-        background: 'linear-gradient(to right, #667eea, #764ba2)'
-      }}>
-        <Row justify="space-between" align="middle">
-          <Col>
-            <Title 
-              level={3} 
-              style={{ 
-                margin: 0, 
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <UnorderedListOutlined style={{ marginRight: '10px' }} />
-              Lista de Tareas
-            </Title>
-          </Col>
-          <Col>
-            <Row align="middle" gutter={16}>
-              <Col>
-                <div style={{ color: 'white' }}>
-                  {localUser ? (
-                    <span>{localUser.name || user.email}</span>
-                  ) : (
-                    <span>{user?.email}</span>
-                  )}
-                </div>
-              </Col>
-              <Col>
-                <Avatar icon={<UserOutlined />} />
-              </Col>
-              <Col>
-                <Button 
-                  type="text" 
-                  icon={<LogoutOutlined />} 
-                  onClick={handleLogout}
-                  style={{ color: 'white' }}
-                >
-                  Salir
-                </Button>
-              </Col>
-            </Row>
-          </Col>
-        </Row>
-      </Header>
-      
-      <Content style={{ padding: '0 50px', marginTop: 64 }}>
-        <div 
-          style={{ 
-            padding: 24, 
-            minHeight: 380, 
-            background: '#fff',
-            borderRadius: '5px',
-            marginTop: '20px'
-          }}
-        >
-          <Row gutter={[16, 16]}>
-            {/* Sección solo visible si tiene permisos */}
-            {canWrite && (
-              <Col xs={24} md={8}>
-                <Card 
-                  title={editTask ? "Editar Tarea" : "Crear Nueva Tarea"}
-                  style={{ marginBottom: '20px' }}
-                >
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                      Título:
-                    </label>
-                    <Input
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Título de la tarea"
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                      Contenido:
-                    </label>
-                    <TextArea
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder="Descripción de la tarea..."
-                      rows={4}
-                    />
-                  </div>
-                  
-                  <Button
-                    type="primary"
-                    onClick={editTask ? updateTask : createTask}
-                    disabled={!title || !content}
-                    block
-                    style={{ marginBottom: editTask ? '8px' : '0' }}
+    <>
+      <GlobalStyle />
+      <Layout style={{ minHeight: '100vh' }}>
+        <StyledHeader>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <NavTitle level={3}>
+                <UnorderedListOutlined style={{ marginRight: '10px' }} />
+                Lista de Tareas
+              </NavTitle>
+            </Col>
+            <Col>
+              <Row align="middle" gutter={16}>
+                <Col>
+                  <UserInfo>
+                    {localUser ? (
+                      <span>{localUser.name || user.email}</span>
+                    ) : (
+                      <span>{user?.email}</span>
+                    )}
+                  </UserInfo>
+                </Col>
+                <Col>
+                  <StyledAvatar icon={<UserOutlined />} />
+                </Col>
+                <Col>
+                  <LogoutBtn 
+                    type="text" 
+                    icon={<LogoutOutlined />} 
+                    onClick={handleLogout}
                   >
-                    {editTask ? "Actualizar" : "Crear Tarea"}
-                  </Button>
-                  
-                  {editTask && (
-                    <Button
-                      onClick={cancelEdit}
-                      block
-                    >
-                      Cancelar
-                    </Button>
-                  )}
-                </Card>
-              </Col>
-            )}
-            
-            {/* lista de tareas */}
-            <Col xs={24} md={canWrite ? 16 : 24}>
-              <div style={{ background: '#f5f5f5', padding: '20px', borderRadius: '5px' }}>
-                <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>Tareas</h2>
-                
-                {loading ? (
-                  <div style={{ textAlign: 'center', margin: '40px 0' }}>
-                    <Spin size="large" />
-                  </div>
-                ) : paginatedTasks.length > 0 ? (
-                  <Row gutter={[16, 16]}>
-                    {paginatedTasks.map((task, index) => (
-                      <Col xs={24} sm={12} md={canWrite ? 12 : 8} key={index}>
-                        <Card
-                          hoverable
-                          style={{ height: '100%' }}
-                          actions={[
-                            // Botón de editar (solo visible para el creador)
-                            canWrite && task.creator === user.email && (
-                              <Button 
-                                type="text" 
-                                icon={<EditOutlined />}
-                                onClick={() => startEdit(task)}
-                              />
-                            ),
-                            // Botón de eliminar (solo visible con permiso)
-                            canDelete && (
-                              <Popconfirm
-                                title="¿Eliminar esta tarea?"
-                                description="Esta acción no se puede deshacer"
-                                onConfirm={() => deleteTask(task.id_task)}
-                                okText="Sí"
-                                cancelText="No"
-                              >
-                                <Button 
-                                  type="text" 
-                                  danger 
-                                  icon={<DeleteOutlined />}
-                                />
-                              </Popconfirm>
-                            )
-                          ].filter(Boolean)}
-                        >
-                          <Card.Meta
-                            title={task.title}
-                            description={
-                              <div>
-                                <p style={{ marginBottom: '10px' }}>{task.content}</p>
-                                <div style={{ fontSize: '12px', color: '#888' }}>
-                                  <p>Creador: {task.creatorName || task.creator}</p>
-                                  <p>Fecha: {formatDate(task.created_at)}</p>
-                                </div>
-                              </div>
-                            }
-                          />
-                        </Card>
-                      </Col>
-                    ))}
-                  </Row>
-                ) : (
-                  <Empty description="No hay tareas disponibles" />
-                )}
-                
-                {tasks.length > 0 && (
-                  <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                    <Pagination
-                      current={currentPage}
-                      pageSize={pageSize}
-                      total={tasks.length}
-                      onChange={handlePageChange}
-                    />
-                  </div>
-                )}
-              </div>
+                    Salir
+                  </LogoutBtn>
+                </Col>
+              </Row>
             </Col>
           </Row>
-        </div>
-      </Content>
-    </Layout>
+        </StyledHeader>
+        
+        <ContentWrapper>
+          <MainCard>
+            <Row gutter={[24, 24]}>
+              {/* Sección solo visible si tiene permisos */}
+              {canWrite && (
+                <Col xs={24} md={8}>
+                  <TaskFormCard 
+                    title={editTask ? "Editar Tarea" : "Crear Nueva Tarea"}
+                  >
+                    <div style={{ marginBottom: '16px' }}>
+                      <InputLabel delay="0.1s">Título:</InputLabel>
+                      <StyledInput
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Título de la tarea"
+                      />
+                    </div>
+                    
+                    <div style={{ marginBottom: '16px' }}>
+                      <InputLabel delay="0.2s">Contenido:</InputLabel>
+                      <StyledTextArea
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder="Descripción de la tarea..."
+                        rows={4}
+                      />
+                    </div>
+                    
+                    <ActionButton
+                      type="primary"
+                      onClick={editTask ? updateTask : createTask}
+                      disabled={!title || !content}
+                      block
+                      style={{ marginBottom: editTask ? '8px' : '0' }}
+                      className="primary"
+                      icon={editTask ? <EditOutlined /> : <PlusOutlined />}
+                    >
+                      {editTask ? "Actualizar" : "Crear Tarea"}
+                    </ActionButton>
+                    
+                    {editTask && (
+                      <ActionButton
+                        onClick={cancelEdit}
+                        block
+                      >
+                        Cancelar
+                      </ActionButton>
+                    )}
+                  </TaskFormCard>
+                </Col>
+              )}
+              
+              {/* lista de tareas */}
+              <Col xs={24} md={canWrite ? 16 : 24}>
+                <TaskListContainer>
+                  <TaskListTitle>Tareas</TaskListTitle>
+                  
+                  {loading ? (
+                    <div style={{ textAlign: 'center', margin: '40px 0' }}>
+                      <Spin size="large" />
+                    </div>
+                  ) : paginatedTasks.length > 0 ? (
+                    <Row gutter={[16, 16]}>
+                      {paginatedTasks.map((task, index) => (
+                        <Col xs={24} sm={12} md={canWrite ? 12 : 8} key={index}>
+                          <TaskCard
+                            hoverable
+                            actions={[
+                              // Botón de editar 
+                              (canWrite && task.creator === user.email || canDelete) && (
+                                <Button 
+                                  type="text" 
+                                  icon={<EditOutlined />}
+                                  onClick={() => startEdit(task)}
+                                />
+                              ),
+                              // Botón de eliminar 
+                              canDelete && (
+                                <Popconfirm
+                                  title="¿Eliminar esta tarea?"
+                                  description="Esta acción no se puede deshacer"
+                                  onConfirm={() => deleteTask(task.id_task)}
+                                  okText="Sí"
+                                  cancelText="No"
+                                >
+                                  <Button 
+                                    type="text" 
+                                    danger 
+                                    icon={<DeleteOutlined />}
+                                  />
+                                </Popconfirm>
+                              )
+                            ].filter(Boolean)}
+                          >
+                            <Card.Meta
+                              title={task.title}
+                              description={
+                                <div>
+                                  <p style={{ marginBottom: '10px' }}>{task.content}</p>
+                                  <TaskMeta>
+                                    <p>Creador: {task.creatorName || task.creator}</p>
+                                    <p>Fecha: {formatDate(task.created_at)}</p>
+                                  </TaskMeta>
+                                </div>
+                              }
+                            />
+                          </TaskCard>
+                        </Col>
+                      ))}
+                    </Row>
+                  ) : (
+                    <Empty description="No hay tareas disponibles" />
+                  )}
+                  
+                  {tasks.length > 0 && (
+                    <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                      <Pagination
+                        current={currentPage}
+                        pageSize={pageSize}
+                        total={tasks.length}
+                        onChange={handlePageChange}
+                      />
+                    </div>
+                  )}
+                </TaskListContainer>
+              </Col>
+            </Row>
+          </MainCard>
+        </ContentWrapper>
+      </Layout>
+    </>
+    
   );
 }
