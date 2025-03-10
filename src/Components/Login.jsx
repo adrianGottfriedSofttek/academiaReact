@@ -279,7 +279,7 @@ export default function Login({mail}) {
     <GlobalStyle />
     <LoginContainer>
       <FormCard>
-        <FormTitle>Lista de Treas</FormTitle>
+        <FormTitle>Lista de Tareas</FormTitle>
         <Form  onSubmit={login}>
           <Row gutter={[0, 16]} >
             <Col span={24}>

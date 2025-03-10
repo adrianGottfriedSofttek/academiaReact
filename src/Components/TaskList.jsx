@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from "../hooks/userAuth";
-import { hasDeletePermission, hasWritePermission } from "../Config/userPermissions";
 import { deleteTask, getAllTasks } from "../Config/taskService";
 import { List, Card, Spin, Empty, Button, message, Row, Col } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import TaskForm from './TaskForm';
 
 
 const TaskList = () => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [canWrite, setCanWrite] = useState(false);
-    const [canDelete, setCanDelete] = useState(false);
+    const [userPermissions, setUserPermissions] = useState("read");
     const { user } = useAuth();
   
     useEffect(() => {
@@ -22,12 +20,23 @@ const TaskList = () => {
     }, [user]);
 
 const checkPermissions = async () => {
-    if(user){
-        const writePermission = await hasWritePermission(user);
-        const deletePermission = await hasDeletePermission(user);
-        setCanWrite(writePermission);
-        setCanDelete(deletePermission);
-    }
+    if(!user) return;
+    
+    try{
+      //buscar user por mail
+      const userData = await readDataFirestore('users', 'email', user.email);
+
+      if(!userData.empty){
+        const userDoc = userData.docs[0].data();
+        setUserPermissions(userDoc.permissions || "read");
+      } else {
+        console.log('Usuario no encontrado:', user.email);
+        setUserPermissions("read"); 
+      } 
+    }catch (error){
+      console.error("Error al verificar permisos:", error);
+      setUserPermissions("read");
+      }   
 };
 
 const fetchTasks = async () => {
@@ -56,14 +65,15 @@ const handleDeleteTask = async (taskId) => {
 
 const handleTaskAdded = (newTask) => {
     setTasks ([newTask, ...tasks]);
-    message.success("Tarea creada con éxito");
 };
 
 // formatear fecha funcion
 const formatDate = (date) => {
     if (!date) return "Fecha no disponible";
+
+    const dateObj = date instanceof Date ? date : new Date(date);
     
-    return new Date(date).toLocaleString('es-ES', {
+    return dateObj.toLocaleString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -71,6 +81,10 @@ const formatDate = (date) => {
       minute: '2-digit'
     });
   };
+    //verifica si usuario puede crear tarea
+  const canWrite = userPermissions === "write" || userPermissions === "delete";
+  //verifica si puede eliminar 
+  const canDelete = userPermissions === "delete";
 
 
   return (
@@ -104,19 +118,27 @@ const formatDate = (date) => {
                 title={task.title}
                 extra={
                   canDelete && (
+                    <Popconfirm
+                      title="¿Eliminar esta tarea?"
+                      description="Esta acción no se puede deshacer"
+                      icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
+                      onConfirm={() => handleDeleteTask(task.id)}
+                      okText="Sí"
+                      cancelText="No"
+                    >
                     <Button 
                       type="text" 
                       danger 
                       icon={<DeleteOutlined />} 
-                      onClick={() => handleDeleteTask(task.id)}
                     />
+                    </Popconfirm>
                   )
                 }
                 hoverable
               >
                 <p>{task.content}</p>
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#888' }}>
-                  <p>Creador: {task.creatorName}</p>
+                  <p>Creador: {task.creatorName || task.creator}</p>
                   <p>Fecha: {formatDate(task.createdAt)}</p>
                 </div>
               </Card>
