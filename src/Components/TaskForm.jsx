@@ -6,20 +6,28 @@ import { createTask } from '../Config/taskService';
 const {TextArea} = Input;
 
 const TaskForm = ({ onTaskAdded, user }) => {
-    const [form] = Form.useForm();
+    
     const [submitting, setSubmitting] = useState(false);
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [showForm, setShowForm] = useState(false);
 
-    const handleSubmit = async (values) => {
-        if (!values.title || !values.content) {
+    const handleSubmit = async () => {
+        if (!title.trim() || !content.trim()) {
           message.warning('Por favor completa todos los campos');
           return;
         }
 
         setSubmitting(true);
         try {
-          const newTask = await createTask(values, user);
-          form.resetFields();
+          const newTask = await createTask({ title, content }, user);
+          // reset formulario
+          setTitle(''),
+          setContent(''),
+          setShowForm(false);
+          
           onTaskAdded(newTask);
+          message.success('Tarea creada con éxito');
         } catch (error) {
           console.error("Error al crear tarea:", error);
           message.error("No se pudo crear la tarea");
@@ -28,46 +36,74 @@ const TaskForm = ({ onTaskAdded, user }) => {
         }
       };
 
+      //si no esta visible, mostrar solo  boton
+      if(!showForm){
+        return(
+          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />} 
+          onClick={() => setShowForm(true)}
+          size="large"
+        >
+          Crear nueva tarea
+        </Button>
+        </div>
+        )
+      }
+
+      //Mostrar formulario completo
       return( 
         <Card
         title= "Crear Nueva tarea"
         style={{ marginBottom: '20px' }}
-        extra={<PlusOutlined />}
+        extra={
+          <Button 
+            type="text" 
+            onClick={() => setShowForm(false)}
         >
-            <Form
-             form={form}
-             layout="vertical"
-             onFinish={handleSubmit}
-            >
+          Cancelar
+          </Button>
+        }
+        >
+            <Form layout="vertical">
                 <Form.Item
                     name="title"
-                    label="Título"
+                    required
                     rules={[{ required: true, message: 'Por favor ingresa un título' }]}
                 >
-                    <TextArea
-                        placeholder="Describe la tarea"
-                        rows={4}
-                        showCount
-                        maxLength ={500}
-                    >
-                    </TextArea>
+                   <Input 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Título de la tarea" 
+                    autoFocus
+                   />
                 </Form.Item>
 
-
-                <Form.Item>
-                    <Button
-                    type="primary" 
-                    htmlType="submit" 
-                    loading={submitting}
-                    block
-                    >
-                        Crear Tarea
-                    </Button>
-
-                </Form.Item>     
-
+                <Form.Item
+                  label="Contenido"
+                  required
+                  rules={[{ required: true, message: 'Por favor ingresa el contenido' }]}
+                   >
+                   <TextArea 
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Describe la tarea..." 
+                    rows={4} 
+                    showCount 
+                    maxLength={500} 
+          />
+        </Form.Item>
+            <Button 
+              type="primary" 
+              onClick={handleSubmit}
+              loading={submitting}
+              icon={<SaveOutlined />}
+              block
+               >
+                 Guardar Tarea
+             </Button>
             </Form>
-
         </Card>
       );
 };

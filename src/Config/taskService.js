@@ -1,7 +1,6 @@
 import firebaseAcademia from "./firebaseConfig";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, getFirestore,serverTimestamp} from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, getFirestore,updateDoc} from "firebase/firestore";
 import { readDataFirestore } from './firestoreCalls';
-import { PERMISSIONS } from './userPermissions';
 
 const db = getFirestore(firebaseAcademia);
 
@@ -13,7 +12,7 @@ export const createTask = async (taskData, user) => {
   try {
     // buscar información
     const userData = await readDataFirestore('users', 'email', user.email);
-    let creatorName = user.email.split('@')[0]; // Valor por defecto
+    let creatorName = user.email;
     
     // get nombre  del usuaroi
     if (!userData.empty) {
@@ -25,18 +24,22 @@ export const createTask = async (taskData, user) => {
     const newTask = {
       title: taskData.title,
       content: taskData.content,
+      creator: user.email,
       creatorName: creatorName,
-      creatorEmail: user.email, 
-      createdAt: serverTimestamp(),
+      created_at: new Date(),
     };
     
     // agregar la tarea 
     const docRef = await addDoc(collection(db, TASKS_COLLECTION), newTask);
+
+    await updateDoc(doc(db, TASKS_COLLECTION, docRef.id), {
+      id_task: docRef.id
+    });
     
     return {
       id: docRef.id,
+      id_task: docRef.id,
       ...newTask,
-      createdAt: new Date() //  fecha local para el objeto retornado
     };
   } catch (error) {
     console.error("Error al crear tarea:", error);
@@ -53,22 +56,17 @@ export const getAllTasks = async () => {
     
     const tasks = [];
     querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      
-      // timestamp a Date si existe
-      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
       
       tasks.push({
         id: doc.id,
-        ...data,
-        createdAt
+        ...doc.data()
       });
     });
     
     return tasks;
   } catch (error) {
     console.error("Error al obtener tareas:", error);
-    throw error;
+    return [];
   }
 };
 
