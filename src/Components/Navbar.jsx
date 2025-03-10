@@ -59,7 +59,8 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    
+    window.location.href = '/login';
   };
 
   const fetchTasks = async () => {
@@ -339,15 +340,15 @@ export default function Navbar() {
                           hoverable
                           style={{ height: '100%' }}
                           actions={[
-                            // Botón de editar (solo visible para el creador)
-                            canWrite && task.creator === user.email && (
+                            // Botón de editar 
+                            (canWrite && task.creator === user.email || canDelete) && (
                               <Button 
                                 type="text" 
                                 icon={<EditOutlined />}
                                 onClick={() => startEdit(task)}
                               />
                             ),
-                            // Botón de eliminar (solo visible con permiso)
+                            // Botón de eliminar 
                             canDelete && (
                               <Popconfirm
                                 title="¿Eliminar esta tarea?"
